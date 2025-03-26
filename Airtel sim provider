@@ -1,0 +1,113 @@
+class AirtelSIM:
+    def _init_(self):
+        # Initialize with some sample data
+        self.customers = {}
+        self.sim_cards = {}
+        self.plans = {
+            1: {"name": "Airtel Rs. 199", "data": 1.5, "calls": "Unlimited", "sms": 100, "validity": 28, "price": 199},
+            2: {"name": "Airtel Rs. 299", "data": 2, "calls": "Unlimited", "sms": 100, "validity": 28, "price": 299},
+            3: {"name": "Airtel Rs. 399", "data": 3, "calls": "Unlimited", "sms": 100, "validity": 28, "price": 399}
+        }
+    
+    def generate_mobile_number(self):
+        """Generate a random Airtel number (starts with 9)"""
+        return "9" + "".join([str(random.randint(0, 9)) for _ in range(9)])
+    
+    def register_customer(self, name, address, id_proof):
+        """Register a new customer"""
+        customer_id = len(self.customers) + 1
+        self.customers[customer_id] = {
+            "name": name,
+            "address": address,
+            "id_proof": id_proof,
+            "join_date": datetime.now().strftime("%Y-%m-%d")
+        }
+        return customer_id
+    
+    def issue_sim(self, customer_id, is_prepaid=True):
+        """Issue a new SIM card to customer"""
+        if customer_id not in self.customers:
+            return None
+        
+        mobile_number = self.generate_mobile_number()
+        sim_id = len(self.sim_cards) + 1
+        
+        self.sim_cards[sim_id] = {
+            "mobile_number": mobile_number,
+            "customer_id": customer_id,
+            "is_prepaid": is_prepaid,
+            "activation_date": datetime.now().strftime("%Y-%m-%d"),
+            "status": "active",
+            "data_balance": 0,
+            "call_balance": 0,
+            "sms_balance": 0,
+            "validity": None,
+            "current_plan": None
+        }
+        
+        return sim_id, mobile_number
+    
+    def show_plans(self, is_prepaid=True):
+        """Display available plans"""
+        print("\nAvailable Airtel Plans:")
+        for plan_id, plan in self.plans.items():
+            print(f"{plan_id}. {plan['name']}")
+            print(f"   Data: {plan['data']}GB/day")
+            print(f"   Calls: {plan['calls']}")
+            print(f"   SMS: {plan['sms']}")
+            print(f"   Validity: {plan['validity']} days")
+            print(f"   Price: Rs. {plan['price']}\n")
+    
+    def recharge_sim(self, sim_id, plan_id):
+        """Recharge a SIM with a plan"""
+        if sim_id not in self.sim_cards or plan_id not in self.plans:
+            return False
+        
+        plan = self.plans[plan_id]
+        self.sim_cards[sim_id]["data_balance"] = plan["data"] * plan["validity"]
+        self.sim_cards[sim_id]["call_balance"] = plan["calls"]
+        self.sim_cards[sim_id]["sms_balance"] = plan["sms"]
+        self.sim_cards[sim_id]["validity"] = (
+            datetime.now() + timedelta(days=plan["validity"])
+        ).strftime("%Y-%m-%d")
+        self.sim_cards[sim_id]["current_plan"] = plan["name"]
+        self.sim_cards[sim_id]["status"] = "active"
+        
+        return True
+    
+    def check_balance(self, sim_id):
+        """Check SIM card balance"""
+        if sim_id not in self.sim_cards:
+            return None
+        
+        sim = self.sim_cards[sim_id]
+        return {
+            "mobile_number": sim["mobile_number"],
+            "data_balance": f"{sim['data_balance']}GB",
+            "call_balance": sim["call_balance"],
+            "sms_balance": sim["sms_balance"],
+            "validity": sim["validity"],
+            "current_plan": sim["current_plan"]
+        }
+    
+    def use_data(self, sim_id, amount):
+        """Use mobile data"""
+        if sim_id not in self.sim_cards:
+            return False
+        
+        if self.sim_cards[sim_id]["data_balance"] >= amount:
+            self.sim_cards[sim_id]["data_balance"] -= amount
+            return True
+        return False
+    
+    def make_call(self, sim_id, duration):
+        """Make a phone call"""
+        if sim_id not in self.sim_cards:
+            return False
+        
+        if self.sim_cards[sim_id]["call_balance"] == "Unlimited":
+            return True
+        elif self.sim_cards[sim_id]["call_balance"] >= duration:
+            self.sim_cards[sim_id]["call_balance"] -= duration
+            return True
+        return False
